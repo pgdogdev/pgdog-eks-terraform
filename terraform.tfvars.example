@@ -1,0 +1,53 @@
+cluster_name = "my-eks-cluster"
+namespace    = "pgdog"
+
+# RDS instances — database_name is the PgDog logical name and must match users.database
+rds_instances = [
+  {
+    identifier    = "my-postgres-db"
+    database_name = "mydb"
+  },
+]
+
+# Aurora clusters — discovers individual instances, all get role = "auto"
+aurora_clusters = [
+  {
+    cluster_identifier = "my-aurora-cluster"
+    database_name      = "mydb"
+  },
+]
+
+# Option A: Users with passwords fetched by Terraform from Secrets Manager
+# (passwords will be in Terraform state)
+# database must match a database_name from rds_instances, aurora_clusters, or databases
+users = [
+  {
+    name       = "myapp"
+    database   = "mydb"
+    secret_arn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:pgdog/myapp-AbCdEf"
+  },
+]
+
+# Option B: External Secrets Operator (mutually exclusive with users)
+# Passwords stay out of Terraform state — the operator pulls them in-cluster.
+# Requires a SecretStore resource to already exist in the namespace.
+# external_secrets = {
+#   secret_store_name = "aws-secrets-manager"
+#   remote_refs = [
+#     {
+#       secret_key = "users.toml"
+#       remote_ref = {
+#         key = "pgdog/production/users"
+#       }
+#     },
+#   ]
+# }
+
+# Additional Helm values
+helm_values = {
+  replicas = 3
+  resources = {
+    requests = { cpu = "500m", memory = "512Mi" }
+    limits   = { cpu = "500m", memory = "512Mi" }
+  }
+}
